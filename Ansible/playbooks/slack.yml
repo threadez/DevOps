@@ -1,0 +1,27 @@
+
+
+- hosts: localhost
+  vars:
+    - slack_domain: threadez.slack.com
+    - slack_token: <API Token>
+  tasks:
+    - name: "It should arrive in the #general channel"
+      slack:
+        domain: "{{ slack_domain }}"
+        token: "{{ slack_token }}"
+        msg: "It should arrive in the #general channel"
+        channel: "#general"
+    - name: Upload logs to slack
+      slack-file-upload:
+         slack_api_token: "{{ slack_token }}"
+         log_path:
+         channel: "#general"
+      register: result
+      when: not(
+              (input_file is undefined)
+              or
+              (input_file is none)
+              or
+              (input_file | trim == '' )
+      ) 
+    - debug: var=result    

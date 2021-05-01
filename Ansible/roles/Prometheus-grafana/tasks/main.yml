@@ -1,0 +1,51 @@
+---
+
+- name: Create threadez group
+  become: yes
+  group:
+     name: "{{promgrafana_group}}"
+     state: present
+
+- name: Create threadez user
+  become: yes
+  user:
+     name: "{{promgrafana_user}}"
+     shell: "/bin/bash"
+     group: "{{promgrafana_group}}"
+     home: "/home/{{promgrafana_user}}"
+
+
+- name: "Create {{promgrafana_user}} Install dir"   
+  become: yes
+  file:
+    path: "{{promgrafana_data_dir}}"
+    state: directory
+    recurse: yes
+    owner: "{{promgrafana_user}}"
+    group: "{{promgrafana_group}}"
+    mode: 755
+
+- name: Copying compose template files
+  become: yes
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{promgrafana_user}}"
+    group: "{{promgrafana_group}}"
+    mode: 755
+  loop:
+    - src: docker-compose.yml.j2
+    - dest: "{{promgrafana_data_dir}}/docker-compose.yml"
+
+- name: copy all files to remote host
+  copy:
+    src: "{{ item }}"
+    dest: "{{promgrafana_data_dir}}"
+    mode: 755
+    owner: "{{promgrafana_user}}"
+    group: "{{promgrafana_group}}"
+  with_fileglob: "?*"    
+  
+
+- include_tasks: docker-start.yml
+  when: docker_start

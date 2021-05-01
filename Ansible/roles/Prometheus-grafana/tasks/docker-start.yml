@@ -1,0 +1,95 @@
+
+- name: Update all packages
+  become: yes
+  yum:
+    name: '*'
+    state: latest
+    update_only: yes
+
+- name: Ensure a list of yum packages are installed
+  become: yes
+  yum:
+    name: "{{ packages }}"
+    state: latest
+    update_cache: yes
+  vars:
+    packages:
+    - python-pip
+    - yum-utils
+    - amazon-linux-extras    
+
+- name: Add extras repository
+  become: yes
+  shell: yum-config-manager --enable extras   
+
+- name: Enable Some packages from amazon-linux-extras packages
+  become: yes
+  shell: "amazon-linux-extras enable python3.8 ansible2 docker"
+
+- name: clean yum metadata cache
+  become: yes
+  command: yum clean metadata
+  args:
+    warn: false
+
+- name: Ensure a list of yum packages are installed
+  become: yes
+  yum:
+      name: "{{ packages }}"
+      state: latest
+      update_cache: yes
+  vars:
+      packages:
+      - python3.8
+      - ansible
+      - docker
+
+  - name: Enable Docker CE service at startup
+    become: yes
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Upgrade pip3
+    become: yes
+    shell: "python3.8 -m pip install pip --upgrade"
+
+  - name: Ensure Python pip packages are installed
+    become: yes
+    pip:
+      name: "{{ packages }}"
+      executable: /usr/local/bin/pip3.8
+    vars:
+      packages:
+      - boto
+      - boto3
+      - docker-compose
+
+   
+- name: Check if compose file exists
+  become: yes  
+  stat:
+    path: "{{promgrafana_data_dir}}/docker-compose.yml"
+  register: filepath
+
+- name: Docker start  when file found else fail
+  become: yes
+  shell: "{{compose_bin}} up -d {{recreate_containers}}" 
+  args:
+    chdir: "{{promgrafana_data_dir}}"
+  register: docker_compose_start
+  failed_when: filepath.stat.exists == false
+
+- debug: var=docker_compose_start
+
+
+- name: Docker ps output
+  become: yes
+  shell: "{{compose_bin}} ps -a" 
+  args:
+    chdir: "{{promgrafana_data_dir}}"
+  register: docker_compose_ps
+  
+- debug: var=docker_compose_ps
+

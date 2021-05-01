@@ -1,0 +1,16 @@
+cadvisor_version: v0.33.0
+prometheus_version: v2.7.1
+loki_version: master
+grafana_version: 6.0.0
+promtail_version: master
+
+recreate_containers: "--force-recreate"
+
+compose_bin: /usr/local/bin/docker-compose
+
+promgrafana_data_dir: /data/app/promgrafana/threadez
+
+promgrafana_user: threadez
+promgrafana_group: threadez
+
+docker_start: true
